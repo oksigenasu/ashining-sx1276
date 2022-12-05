@@ -32,7 +32,7 @@ usage(char *progname)
 -c --sock-unix-ctrl FILE Change and Read settings from a Unix Domain Socket\n\
 -d --daemon              Run as a Daemon\n\
 -e --encryption HEX      Configure data encryption module using 16 byte HEX. Only modules with same data encyption \n\
-                         can communicate with each other. Example -e 0102030405060708090A0B0C0D0E0F10
+                         can communicate with each other. Example -e 0102030405060708090A0B0C0D0E0F10\n\
 ", opts.gpio_m0, opts.gpio_m1, opts.gpio_aux);
 }
 
@@ -234,6 +234,7 @@ bad_settings:
   return err;
 }
 
+int
 options_parse_encryption(struct options *opts, char *encryption)
 {
   int num_parsed, err;
@@ -309,7 +310,7 @@ options_parse(struct options *opts, int argc, char *argv[])
   while(1)
   {
     option_index = 0;
-    c = getopt_long(argc, argv, "hrtvsy:m:bdx:w:c:", long_options, &option_index);
+    c = getopt_long(argc, argv, "hrtvsy:m:bdx:we:c:", long_options, &option_index);
 
     if(c == -1)
       break;

@@ -542,10 +542,10 @@ as32_cmd_read_version(struct AS32 *dev)
   tty_set_read_with_timeout(dev->uart_fd, &dev->tty, 5);
 
   err = as32_read_uart(dev, dev->version, sizeof(dev->version));
-  if(err)
-  {
-    return err;
-  }
+  // if(err)
+  // {
+  //   return err;
+  // }
 
   // if(dev->version[0] != 0xC3)
   // {
@@ -592,8 +592,9 @@ as32_print_version(struct AS32 *dev)
   // info_output("Frequency:                %d MHz\n", dev->frequency_mhz);
   // info_output("Version:                  %d\n", dev->ver);
   // info_output("Features:                 0x%02x\n", dev->features);
-  info_output("Version:        ");
+  info_output("Version:                  ");
   info_output(dev->version);
+  info_output("\n");
 }
 
 int
@@ -668,9 +669,10 @@ as32_cmd_write_encryption(struct AS32 *dev, uint8_t *encryption)
 
 
   info_output("writing encryption 0x");
-  for(int i=0; i<16; i++)
+  for(int i=0; i<16; i++){
     encryptionBuffer[i+1] = encryption[i];
     info_output("%x", encryption[i]);
+  }
   info_output("\n");
 
   bytes = write(dev->uart_fd, encryptionBuffer, 17);
@@ -1060,7 +1062,7 @@ as32_poll_socket_unix_control(struct AS32 *dev, struct options *opts, int fd_soc
      allocate memory on the heap since we have to send it
      to other functions for a buffer
   */
-  control = malloc(32);
+  control = malloc(64);
   addrlen = sizeof(struct sockaddr_un);
 
   bytes = recvfrom(fd_sockc, control, 32, 0, (struct sockaddr*) &client, &addrlen);

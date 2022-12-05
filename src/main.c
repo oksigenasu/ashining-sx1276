@@ -80,7 +80,7 @@ main(int argc, char *argv[])
   }
 
   /* must be in sleep mode to read or write settings */
-  if(opts.status || opts.settings_write_input[0])
+  if(opts.status || opts.settings_write_input[0] || opts.setting_write_encryption[0])
   {
     if(as32_set_mode(&dev, SLEEP))
     {
@@ -109,6 +109,11 @@ main(int argc, char *argv[])
   if(opts.settings_write_input[0])
   {
     err |= as32_cmd_write_settings(&dev, opts.settings_write_input);
+  }
+
+  if(opts.setting_write_encryption[0])
+  {
+    err |= as32_cmd_write_encryption(&dev, opts.setting_write_encryption);
   }
 
   /* switch back to normal mode for tx/rx */
