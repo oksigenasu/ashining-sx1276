@@ -1,15 +1,15 @@
 #!/usr/bin/python3
 
 """
-Run python test cases on the e32 for the control socket.
-For these to run the e32 needs to be running with the following
+Run python test cases on the as32 for the control socket.
+For these to run the as32 needs to be running with the following
 socket files below.
 
-Run the e32 like so:
-$ e32 -v --sock-unix-ctrl $HOME/e32.control --sock-unix-data $HOME/e32.data
+Run the as32 like so:
+$ as32 -v --sock-unix-ctrl $HOME/as32.control --sock-unix-data $HOME/as32.data
 
 Then run the test like so:
-$ python3 ebyte-sx1276/test/e32_test.py 
+$ python3 ebyte-sx1276/test/as32_test.py 
 """
 
 import socket
@@ -18,8 +18,8 @@ import os.path
 import unittest
 from pathlib import Path
 
-CONTROL_SOCKET_FILE = str(Path.home())+"/e32.control"
-DATA_SOCKET_FILE = str(Path.home())+"/e32.data"
+CONTROL_SOCKET_FILE = str(Path.home())+"/as32.control"
+DATA_SOCKET_FILE = str(Path.home())+"/as32.data"
 CLIENT_SOCKET_FILE = str(Path.home())+"/client"
 
 def open_client_socket():
@@ -36,8 +36,8 @@ def close_client_socket(client_socket, client_socket_file):
     if os.path.exists(client_socket_file):
         os.remove(client_socket_file)
 
-class TestE32ControlSocket(unittest.TestCase):
-    """ A class to test the control socket of the e32 """
+class TestAS32ControlSocket(unittest.TestCase):
+    """ A class to test the control socket of the as32 """
 
     def setUp(self):
         """ Open the client socket each time """
@@ -118,13 +118,13 @@ class TestE32ControlSocket(unittest.TestCase):
         self.assertEqual(bytes[1], bytes_orig[1])
         self.assertEqual(bytes[2], bytes_orig[2])
 
-        # TODO we will run tearDown and remove the file before the e32 can send back
-        # from the e32 we get a
+        # TODO we will run tearDown and remove the file before the as32 can send back
+        # from the as32 we get a
         # ERROR [ENOENT No such file or directory] unable to send back status to unix socket
         # time.sleep(1)
 
-class TestE32DataSocket(unittest.TestCase):
-    """ A class to test the data socket of the e32 """
+class TestAS32DataSocket(unittest.TestCase):
+    """ A class to test the data socket of the as32 """
 
     def setUp(self):
         """ Open the client socket each time """

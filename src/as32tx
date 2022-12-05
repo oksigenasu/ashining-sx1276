@@ -5,7 +5,7 @@ import sys
 import os, os.path
 import time
 
-e32_sock = "/run/e32.socket"
+as32_sock = "/run/as32.socket"
 csock_file = "/tmp/client"
 
 if os.path.exists(csock_file):
@@ -14,8 +14,8 @@ if os.path.exists(csock_file):
 csock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
 csock.bind(csock_file)
 
-print("registering socket", e32_sock)
-csock.sendto(b'', e32_sock)
+print("registering socket", as32_sock)
+csock.sendto(b'', as32_sock)
 (msg, address) = csock.recvfrom(10)
 
 if msg[0] != 0:
@@ -23,12 +23,12 @@ if msg[0] != 0:
     sys.exit(1)
 
 #print("registering")
-#csock.sendto(b'', e32_sock)
+#csock.sendto(b'', as32_sock)
 #(bytes, address) = csock.recvfrom(10)
 #print("return code", bytes[0])
 
 print("sending", sys.argv[1])
-csock.sendto(str.encode(sys.argv[1]), e32_sock)
+csock.sendto(str.encode(sys.argv[1]), as32_sock)
 (bytes, address) = csock.recvfrom(10)
 print("return code", bytes[0])
 

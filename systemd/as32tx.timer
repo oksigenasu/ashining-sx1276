@@ -1,5 +1,5 @@
 [Unit]
-Description=Timer to transmit on the ebyte e32
+Description=Timer to transmit on the ashining as32
 
 [Timer]
 #OnCalendar=*-*-* *:*:00
@@ -8,4 +8,4 @@ OnCalendar=*:*:0/10
 AccuracySec=1us
 
 [Install]
-WantedBy=e32.service
+WantedBy=as32.service

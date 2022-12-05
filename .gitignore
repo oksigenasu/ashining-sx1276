@@ -50,9 +50,9 @@ src/Makefile
 .deps
 config.h
 tags
-e32
+as32
 \#*#
 \.\#*
 .vscode
 
-/e32-*.tar.gz
+/as32-*.tar.gz

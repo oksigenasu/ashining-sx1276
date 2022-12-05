@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 """
-Read received data from the e32 socket
+Read received data from the as32 socket
 """
 
 import socket
@@ -11,13 +11,13 @@ import signal
 import argparse
 from pathlib import Path
 
-parser = argparse.ArgumentParser(description="Receive data from the e32 socket")
+parser = argparse.ArgumentParser(description="Receive data from the as32 socket")
 parser.add_argument('--datasock',
-    help="data socket to send data to the e32",
-    default="/run/e32.data")
+    help="data socket to send data to the as32",
+    default="/run/as32.data")
 parser.add_argument('--clientsock',
-    help="client socket for e32 to send data this program",
-    default=str(Path.home())+"/e32.rx.data")
+    help="client socket for as32 to send data this program",
+    default=str(Path.home())+"/as32.rx.data")
 
 args = parser.parse_args()
 
@@ -44,7 +44,7 @@ def close_sock():
         os.remove(client_sock)
 
 client_sock = args.clientsock
-e32_sock = args.datasock
+as32_sock = args.datasock
 
 if os.path.exists(client_sock):
     os.remove(client_sock)
@@ -52,8 +52,8 @@ if os.path.exists(client_sock):
 csock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
 csock.bind(client_sock)
 
-print("registering socket", e32_sock)
-csock.sendto(b'', e32_sock)
+print("registering socket", as32_sock)
+csock.sendto(b'', as32_sock)
 (msg, address) = csock.recvfrom(10)
 
 if msg[0] != 0:
@@ -63,6 +63,6 @@ else:
     print("client registered")
 
 while True:
-    # receive from the e32
+    # receive from the as32
     (msg, address) = csock.recvfrom(59)
     print("received from", address, len(msg),"bytes with", msg)

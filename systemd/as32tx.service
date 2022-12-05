@@ -1,0 +1,12 @@
+[Unit]
+Description=Transmit on the ashining as32
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/as32tx "the quick brown hare"
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+Wants=as32.service

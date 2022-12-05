@@ -1,1 +1,1 @@
-dist_bin_SCRIPTS = e32tx e32rx
+dist_bin_SCRIPTS = as32tx as32rx

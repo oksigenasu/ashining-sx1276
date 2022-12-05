@@ -8,12 +8,12 @@
 #include <unistd.h>
 #include "become_daemon.h"
 #include "error.h"
-#include "e32.h"
+#include "as32.h"
 #include "gpio.h"
 #include "options.h"
 
 struct options opts;
-struct E32 dev;
+struct AS32 dev;
 
 static
 void signal_handler(int sig)
@@ -24,7 +24,7 @@ void signal_handler(int sig)
     info_output("daemon stopping pid=%d sig=%d", getpid(), sig);
 
   options_deinit(&opts);
-  exit_status = e32_deinit(&dev, &opts);
+  exit_status = as32_deinit(&dev, &opts);
   exit(exit_status);
 }
 
@@ -51,16 +51,16 @@ main(int argc, char *argv[])
     options_print(&opts);
   }
 
-  err = e32_init(&dev, &opts);
+  err = as32_init(&dev, &opts);
   if(err)
   {
-    err_output("unable to initialize the e32");
+    err_output("unable to initialize the as32");
     goto cleanup;
   }
 
   if(opts.mode != -1)
   {
-    err |= e32_set_mode(&dev, opts.mode);
+    err |= as32_set_mode(&dev, opts.mode);
     goto cleanup;
   }
 
@@ -68,21 +68,21 @@ main(int argc, char *argv[])
   {
     uint8_t buf[512];
     for(int i=0; i<512; i++) buf[i] = i;
-    e32_transmit(&dev, buf, 512);
+    as32_transmit(&dev, buf, 512);
     goto cleanup;
   }
   if(opts.reset)
   {
-    err |= e32_set_mode(&dev, SLEEP);
-    err |= e32_cmd_reset(&dev);
-    err |= e32_set_mode(&dev, NORMAL);
+    err |= as32_set_mode(&dev, SLEEP);
+    err |= as32_cmd_reset(&dev);
+    err |= as32_set_mode(&dev, NORMAL);
     goto cleanup;
   }
 
   /* must be in sleep mode to read or write settings */
   if(opts.status || opts.settings_write_input[0])
   {
-    if(e32_set_mode(&dev, SLEEP))
+    if(as32_set_mode(&dev, SLEEP))
     {
       err_output("unable to go to sleep mode\n");
       goto cleanup;
@@ -91,28 +91,28 @@ main(int argc, char *argv[])
 
   if(opts.status)
   {
-    if(e32_cmd_read_version(&dev))
+    if(as32_cmd_read_version(&dev))
     {
       err_output("unable to read version\n");
       goto cleanup;
     }
-    if(e32_cmd_read_settings(&dev))
+    if(as32_cmd_read_settings(&dev))
     {
       err_output("unable to read settings\n");
       goto cleanup;
     }
-    e32_print_version(&dev);
-    e32_print_settings(&dev);
+    as32_print_version(&dev);
+    as32_print_settings(&dev);
     goto cleanup;
   }
 
   if(opts.settings_write_input[0])
   {
-    err |= e32_cmd_write_settings(&dev, opts.settings_write_input);
+    err |= as32_cmd_write_settings(&dev, opts.settings_write_input);
   }
 
   /* switch back to normal mode for tx/rx */
-  if(e32_set_mode(&dev, NORMAL))
+  if(as32_set_mode(&dev, NORMAL))
   {
     err_output("unable to go to normal mode\n");
     goto cleanup;
@@ -126,18 +126,18 @@ main(int argc, char *argv[])
       err_output("mail: error becoming daemon: %d\n", err);
       goto cleanup;
     }
-    if(write_pidfile("/run/e32.pid"))
+    if(write_pidfile("/run/as32.pid"))
     {
       errno_output("unable to write pid file\n");
     }
     info_output("daemon started pid=%ld", getpid());
   }
 
-  err |= e32_poll(&dev, &opts);
+  err |= as32_poll(&dev, &opts);
   if(err)
     err_output("error polling %d", err);
 cleanup:
-  err |= e32_deinit(&dev, &opts);
+  err |= as32_deinit(&dev, &opts);
 
   return err;
 }

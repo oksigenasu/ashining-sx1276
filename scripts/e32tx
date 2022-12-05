@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 """
-Write data to the socket of the e32 for transmission
+Write data to the socket of the as32 for transmission
 """
 
 import socket
@@ -10,22 +10,22 @@ import os
 import argparse
 from pathlib import Path
 
-parser = argparse.ArgumentParser(description="Transmit Data through the e32 socket")
+parser = argparse.ArgumentParser(description="Transmit Data through the as32 socket")
 parser.add_argument('message',
     help="The message to send")
 parser.add_argument('--datasock',
-    help="data socket to send data to the e32",
-    default="/run/e32.data")
+    help="data socket to send data to the as32",
+    default="/run/as32.data")
 parser.add_argument('--clientsock',
-    help="socket e32 sends data to",
-    default=str(Path.home())+"/e32.tx.data")
+    help="socket as32 sends data to",
+    default=str(Path.home())+"/as32.tx.data")
 parser.add_argument('--skip-registration',
     help="don't register this client for when data is received over LoRa",
     action='store_true')
 
 args = parser.parse_args()
 
-e32_sock = args.datasock
+as32_sock = args.datasock
 csock_file = args.clientsock
 
 if os.path.exists(csock_file):
@@ -35,8 +35,8 @@ csock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
 csock.bind(csock_file)
 
 if not args.skip_registration:
-    print("registering socket", csock_file, "to", e32_sock)
-    csock.sendto(b'', e32_sock)
+    print("registering socket", csock_file, "to", as32_sock)
+    csock.sendto(b'', as32_sock)
     (msg, address) = csock.recvfrom(10)
 
     if len(msg) != 1 or msg[0] != 0:
@@ -48,7 +48,7 @@ if not args.skip_registration:
 msg = str.encode(args.message)
 print("sending", len(msg), msg)
 
-csock.sendto(msg, e32_sock)
+csock.sendto(msg, as32_sock)
 (msg, address) = csock.recvfrom(512)
 
 if len(msg) == 1 and msg[0] == 0:

@@ -1,4 +1,4 @@
-#include "e32.h"
+#include "as32.h"
 
 uint8_t txbuf[TX_BUF_BYTES];
 uint8_t rxbuf[RX_BUF_BYTES];
@@ -12,7 +12,7 @@ uint8_t rxbuf[RX_BUF_BYTES];
 #define PFD_SOCKET_UNIX_CONTROL 5
 
 static int
-e32_init_gpio(struct options *opts, struct E32 *dev)
+as32_init_gpio(struct options *opts, struct AS32 *dev)
 {
   int inputs[64], outputs[64];
   int ninputs, noutputs;
@@ -105,7 +105,7 @@ e32_init_gpio(struct options *opts, struct E32 *dev)
 }
 
 static int
-e32_init_uart(struct E32 *dev, char *tty_name)
+as32_init_uart(struct AS32 *dev, char *tty_name)
 {
   int ret;
   ret = tty_open(tty_name, &dev->uart_fd, &dev->tty);
@@ -136,19 +136,19 @@ socket_free(void *socket)
 }
 
 int
-e32_init(struct E32 *dev, struct options *opts)
+as32_init(struct AS32 *dev, struct options *opts)
 {
   int ret;
 
   dev->verbose = opts->verbose;
   dev->socket_list = NULL;
 
-  ret = e32_init_gpio(opts, dev);
+  ret = as32_init_gpio(opts, dev);
 
   if(ret)
     return ret;
 
-  ret = e32_init_uart(dev, opts->tty_name);
+  ret = as32_init_uart(dev, opts->tty_name);
   if(ret == -1)
     return ret;
 
@@ -164,11 +164,11 @@ e32_init(struct E32 *dev, struct options *opts)
 }
 
 int
-e32_set_mode(struct E32 *dev, int mode)
+as32_set_mode(struct AS32 *dev, int mode)
 {
   int ret;
 
-  if(e32_get_mode(dev))
+  if(as32_get_mode(dev))
   {
     err_output("unable to get mode\n");
     return 1;
@@ -208,7 +208,7 @@ e32_set_mode(struct E32 *dev, int mode)
 }
 
 int
-e32_get_mode(struct E32 *dev)
+as32_get_mode(struct AS32 *dev)
 {
   int ret;
 
@@ -230,7 +230,7 @@ e32_get_mode(struct E32 *dev)
 }
 
 int
-e32_deinit(struct E32 *dev, struct options* opts)
+as32_deinit(struct AS32 *dev, struct options* opts)
 {
   int ret;
   ret = 0;
@@ -257,7 +257,7 @@ e32_deinit(struct E32 *dev, struct options* opts)
 }
 
 static int
-e32_read_uart(struct E32* dev, uint8_t buf[], int n_bytes)
+as32_read_uart(struct AS32* dev, uint8_t buf[], int n_bytes)
 {
   int bytes, bytes_read;
   uint8_t *ptr;
@@ -296,7 +296,7 @@ e32_read_uart(struct E32* dev, uint8_t buf[], int n_bytes)
 }
 
 int
-e32_cmd_read_settings(struct E32 *dev)
+as32_cmd_read_settings(struct AS32 *dev)
 {
   ssize_t bytes;
   int err;
@@ -314,7 +314,7 @@ e32_cmd_read_settings(struct E32 *dev)
 
   // set a .5 second timout
   tty_set_read_with_timeout(dev->uart_fd, &dev->tty, 5);
-  err = e32_read_uart(dev, dev->settings, sizeof(dev->settings));
+  err = as32_read_uart(dev, dev->settings, sizeof(dev->settings));
   if(err)
   {
     return err;
@@ -458,7 +458,7 @@ e32_cmd_read_settings(struct E32 *dev)
 }
 
 void
-e32_print_settings(struct E32 *dev)
+as32_print_settings(struct AS32 *dev)
 {
   info_output("Settings Raw Value:       0x");
   for(int i=0; i<6; i++) info_output("%02x", dev->settings[i]);
@@ -495,7 +495,7 @@ e32_print_settings(struct E32 *dev)
   info_output("Channel:                  %d\n", dev->channel);
   info_output("Frequency                 %d MHz\n", dev->channel+410);
 
-  if(dev->transmission_mode)
+  if(!dev->transmission_mode)
     info_output("Transmission Mode:        Transparent\n");
   else
     info_output("Transmission Mode:        Fixed\n");
@@ -516,13 +516,13 @@ e32_print_settings(struct E32 *dev)
 }
 
 int
-e32_cmd_read_operating(struct E32 *dev)
+as32_cmd_read_operating(struct AS32 *dev)
 {
   return -1;
 }
 
 int
-e32_cmd_read_version(struct E32 *dev)
+as32_cmd_read_version(struct AS32 *dev)
 {
   ssize_t bytes;
   int err;
@@ -541,41 +541,41 @@ e32_cmd_read_version(struct E32 *dev)
   // set a .5 second timout
   tty_set_read_with_timeout(dev->uart_fd, &dev->tty, 5);
 
-  err = e32_read_uart(dev, dev->version, sizeof(dev->version));
+  err = as32_read_uart(dev, dev->version, sizeof(dev->version));
   if(err)
   {
     return err;
   }
 
-  if(dev->version[0] != 0xC3)
-  {
-    err_output("mismatch 0x%02x != 0xc3\n", dev->version[0]);
-    return -1;
-  }
+  // if(dev->version[0] != 0xC3)
+  // {
+  //   err_output("mismatch 0x%02x != 0xc3\n", dev->version[0]);
+  //   return -1;
+  // }
 
-  switch(dev->version[1])
-  {
-    case 0x32:
-      dev->frequency_mhz = 433;
-      break;
-    case 0x38:
-      dev->frequency_mhz = 470;
-      break;
-    case 0x45:
-      dev->frequency_mhz = 868;
-      break;
-    case 0x44:
-      dev->frequency_mhz = 915;
-      break;
-    case 0x46:
-      dev->frequency_mhz = 170;
-      break;
-    default:
-      dev->frequency_mhz = 0;
-  }
+  // switch(dev->version[1])
+  // {
+  //   case 0x32:
+  //     dev->frequency_mhz = 433;
+  //     break;
+  //   case 0x38:
+  //     dev->frequency_mhz = 470;
+  //     break;
+  //   case 0x45:
+  //     dev->frequency_mhz = 868;
+  //     break;
+  //   case 0x44:
+  //     dev->frequency_mhz = 915;
+  //     break;
+  //   case 0x46:
+  //     dev->frequency_mhz = 170;
+  //     break;
+  //   default:
+  //     dev->frequency_mhz = 0;
+  // }
 
-  dev->ver = dev->version[2];
-  dev->features = dev->version[3];
+  // dev->ver = dev->version[2];
+  // dev->features = dev->version[3];
 
   usleep(54000);
 
@@ -583,19 +583,21 @@ e32_cmd_read_version(struct E32 *dev)
 }
 
 void
-e32_print_version(struct E32 *dev)
+as32_print_version(struct AS32 *dev)
 {
-  info_output("Version Raw Value:        0x");
-  for(int i=0;i<4;i++)
-    info_output("%02x", dev->version[i]);
-  info_output("\n");
-  info_output("Frequency:                %d MHz\n", dev->frequency_mhz);
-  info_output("Version:                  %d\n", dev->ver);
-  info_output("Features:                 0x%02x\n", dev->features);
+  // info_output("Version Raw Value:        0x");
+  // for(int i=0;i<4;i++)
+  //   info_output("%02x", dev->version[i]);
+  // info_output("\n");
+  // info_output("Frequency:                %d MHz\n", dev->frequency_mhz);
+  // info_output("Version:                  %d\n", dev->ver);
+  // info_output("Features:                 0x%02x\n", dev->features);
+  info_output("Version:        ");
+  info_output(dev->version);
 }
 
 int
-e32_cmd_reset(struct E32 *dev)
+as32_cmd_reset(struct AS32 *dev)
 {
   ssize_t bytes;
   const uint8_t cmd[3] = {0xC4, 0xC4, 0xC4};
@@ -608,14 +610,14 @@ e32_cmd_reset(struct E32 *dev)
 }
 
 int
-e32_cmd_write_settings(struct E32 *dev, uint8_t *settings)
+as32_cmd_write_settings(struct AS32 *dev, uint8_t *settings)
 {
   int err;
   ssize_t bytes;
   uint8_t orig_settings[6];
 
   err = 0;
-  if(e32_cmd_read_settings(dev))
+  if(as32_cmd_read_settings(dev))
   {
     err_output("unable to read settings before setting them");
     return 1;
@@ -640,7 +642,7 @@ e32_cmd_write_settings(struct E32 *dev, uint8_t *settings)
   /* allow time for settings to change */
   usleep(500000);
 
-  if(e32_cmd_read_settings(dev))
+  if(as32_cmd_read_settings(dev))
   {
     err_output("unable to read settings after setting them\n");
     return 1;
@@ -654,8 +656,44 @@ e32_cmd_write_settings(struct E32 *dev, uint8_t *settings)
   return err;
 }
 
+int
+as32_cmd_write_encryption(struct AS32 *dev, uint8_t *encryption)
+{
+  int err;
+  ssize_t bytes;
+  uint8_t respond[5];
+  uint8_t encryptionBuffer[17];
+  uint8_t encryptCommand = 0xC6;
+  encryptionBuffer[0] = encryptCommand;
+
+
+  info_output("writing encryption 0x");
+  for(int i=0; i<16; i++)
+    encryptionBuffer[i+1] = encryption[i];
+    info_output("%x", encryption[i]);
+  info_output("\n");
+
+  bytes = write(dev->uart_fd, encryptionBuffer, 17);
+  if(bytes == -1)
+   return -1;
+
+  /* allow time for settings to change */
+  usleep(50000);
+
+  tty_set_read_with_timeout(dev->uart_fd, &dev->tty, 5);
+
+  err = as32_read_uart(dev, respond, 4);
+  if(err)
+  {
+    return err;
+  }
+  if (respond[0] == 0x4F && respond[1] == 0x4B) return 1;
+
+  return err;
+}
+
 ssize_t
-e32_transmit(struct E32 *dev, uint8_t *buf, size_t buf_len)
+as32_transmit(struct AS32 *dev, uint8_t *buf, size_t buf_len)
 {
   ssize_t bytes;
 
@@ -664,7 +702,7 @@ e32_transmit(struct E32 *dev, uint8_t *buf, size_t buf_len)
   bytes = write(dev->uart_fd, buf, buf_len);
   if(bytes == -1)
   {
-    errno_output("writing to e32 uart\n");
+    errno_output("writing to as32 uart\n");
     return -1;
   }
   else if(bytes != buf_len)
@@ -674,13 +712,13 @@ e32_transmit(struct E32 *dev, uint8_t *buf, size_t buf_len)
   }
 
   if(dev->verbose)
-      debug_output("e32_transmit: transmitted %d bytes\n", bytes);
+      debug_output("as32_transmit: transmitted %d bytes\n", bytes);
 
   return 0;
 }
 
 int
-e32_receive(struct E32 *dev, uint8_t *buf, size_t buf_len)
+as32_receive(struct AS32 *dev, uint8_t *buf, size_t buf_len)
 {
   int bytes;
   bytes = read(dev->uart_fd, buf, buf_len);
@@ -688,7 +726,7 @@ e32_receive(struct E32 *dev, uint8_t *buf, size_t buf_len)
 }
 
 static int
-e32_write_output(struct E32 *dev, struct options *opts, uint8_t* buf, const size_t bytes)
+as32_write_output(struct AS32 *dev, struct options *opts, uint8_t* buf, const size_t bytes)
 {
   socklen_t addrlen; // unix domain socket client address
   size_t outbytes;
@@ -702,7 +740,7 @@ e32_write_output(struct E32 *dev, struct options *opts, uint8_t* buf, const size
     outbytes = fwrite(buf, 1, bytes, opts->output_file);
     if(outbytes != bytes)
     {
-      err_output("e32_write_output: only wrote %d of %d bytes to output file", outbytes, bytes);
+      err_output("as32_write_output: only wrote %d of %d bytes to output file", outbytes, bytes);
       ret++;
     }
   }
@@ -714,12 +752,12 @@ e32_write_output(struct E32 *dev, struct options *opts, uint8_t* buf, const size
     addrlen = sizeof(struct sockaddr_un);
 
     if(dev->verbose)
-      debug_output("e32_write_output: sending %d bytes to socket %s", bytes, cl->sun_path);
+      debug_output("as32_write_output: sending %d bytes to socket %s", bytes, cl->sun_path);
 
     outbytes = sendto(opts->fd_socket_unix_data, buf, bytes, 0, (struct sockaddr*) cl, addrlen);
     if(outbytes == -1)
     {
-      errno_output("e32_write_output: unable to send back status to unix socket. removing from list.");
+      errno_output("as32_write_output: unable to send back status to unix socket. removing from list.");
       list_remove(dev->socket_list, cl);
       ret++;
     }
@@ -736,10 +774,10 @@ e32_write_output(struct E32 *dev, struct options *opts, uint8_t* buf, const size
 }
 
 static void
-e32_poll_input_enable(struct options *opts, struct pollfd pfd[])
+as32_poll_input_enable(struct options *opts, struct pollfd pfd[])
 {
   if(opts->verbose)
-    debug_output("e32_poll_input_enable\n");
+    debug_output("as32_poll_input_enable\n");
 
   if(opts->input_standard)
   {
@@ -767,10 +805,10 @@ e32_poll_input_enable(struct options *opts, struct pollfd pfd[])
 }
 
 static void
-e32_poll_input_disable(struct options *opts, struct pollfd pfd[])
+as32_poll_input_disable(struct options *opts, struct pollfd pfd[])
 {
   if(opts->verbose)
-    debug_output("e32_poll_input_disable\n");
+    debug_output("as32_poll_input_disable\n");
 
   if(opts->input_standard)
   {
@@ -798,7 +836,7 @@ e32_poll_input_disable(struct options *opts, struct pollfd pfd[])
 }
 
 static void
-e32_poll_init(struct E32 *dev, struct options *opts, struct pollfd pfd[])
+as32_poll_init(struct AS32 *dev, struct options *opts, struct pollfd pfd[])
 {
   tty_set_read_polling(dev->uart_fd, &dev->tty);
 
@@ -835,16 +873,16 @@ e32_poll_init(struct E32 *dev, struct options *opts, struct pollfd pfd[])
   pfd[PFD_SOCKET_UNIX_CONTROL].fd = -1;
   pfd[PFD_SOCKET_UNIX_CONTROL].events = 0;
 
-  e32_poll_input_enable(opts, pfd);
+  as32_poll_input_enable(opts, pfd);
 
 }
 
 static int
-e32_poll_stdin(struct E32 *dev, int fd_stdin, int *loop_continue)
+as32_poll_stdin(struct AS32 *dev, int fd_stdin, int *loop_continue)
 {
   ssize_t bytes;
 
-  bytes = read(fd_stdin, &txbuf, E32_MAX_PACKET_LENGTH);
+  bytes = read(fd_stdin, &txbuf, AS32_MAX_PACKET_LENGTH);
   if(bytes == -1)
   {
     errno_output("error reading from stdin\n");
@@ -852,13 +890,13 @@ e32_poll_stdin(struct E32 *dev, int fd_stdin, int *loop_continue)
   }
 
   if(dev->verbose)
-    debug_output("e32_poll_stdin: got %d bytes as input writing to uart\n", bytes);
+    debug_output("as32_poll_stdin: got %d bytes as input writing to uart\n", bytes);
 
-  if(e32_transmit(dev, txbuf, bytes))
+  if(as32_transmit(dev, txbuf, bytes))
     return 3;
 
   /* sent input through a pipe */
-  if(!dev->isatty && bytes < E32_MAX_PACKET_LENGTH)
+  if(!dev->isatty && bytes < AS32_MAX_PACKET_LENGTH)
   {
     if(dev->verbose)
       debug_output("getting out of loop\n");
@@ -869,14 +907,14 @@ e32_poll_stdin(struct E32 *dev, int fd_stdin, int *loop_continue)
 }
 
 static int
-e32_poll_uart(struct E32 *dev, struct options *opts, int fd_uart, ssize_t *rx_buf_size)
+as32_poll_uart(struct AS32 *dev, struct options *opts, int fd_uart, ssize_t *rx_buf_size)
 {
   ssize_t bytes;
 
   bytes = read(fd_uart, rxbuf+(*rx_buf_size), RX_BUF_BYTES);
   if(bytes == -1)
   {
-    errno_output("e32_poll_uart error reading from uart, fd=%d, buf=%p, total=%p, mode=%d\n", fd_uart, rxbuf, rx_buf_size, dev->mode);
+    errno_output("as32_poll_uart error reading from uart, fd=%d, buf=%p, total=%p, mode=%d\n", fd_uart, rxbuf, rx_buf_size, dev->mode);
     return 1;
   }
 
@@ -894,35 +932,35 @@ e32_poll_uart(struct E32 *dev, struct options *opts, int fd_uart, ssize_t *rx_bu
   *rx_buf_size += bytes;
 
   if(dev->verbose)
-    debug_output("e32_poll_uart: received %d bytes for a total of %ld bytes from uart\n", bytes, *rx_buf_size);
+    debug_output("as32_poll_uart: received %d bytes for a total of %ld bytes from uart\n", bytes, *rx_buf_size);
 
   return 0;
 }
 
 static int
-e32_poll_file(struct E32 *dev, struct options *opts, int fd_file, int *loop_continue)
+as32_poll_file(struct AS32 *dev, struct options *opts, int fd_file, int *loop_continue)
 {
   ssize_t bytes;
 
   if(opts->verbose)
     debug_output("reading from fd %d\n", fd_file);
 
-  bytes = fread(txbuf, 1, E32_MAX_PACKET_LENGTH, opts->input_file);
+  bytes = fread(txbuf, 1, AS32_MAX_PACKET_LENGTH, opts->input_file);
 
   if(opts->verbose)
-    debug_output("e32_poll_file: writing %d bytes from file to uart\n", bytes);
+    debug_output("as32_poll_file: writing %d bytes from file to uart\n", bytes);
 
-  if(e32_transmit(dev, txbuf, bytes))
+  if(as32_transmit(dev, txbuf, bytes))
   {
     err_output("error in transmit\n");
     return 1;
   }
 
-  if(e32_write_output(dev, opts, txbuf, bytes))
+  if(as32_write_output(dev, opts, txbuf, bytes))
     err_output("error writing outputs\n");
 
   /* all bytes read from file */
-  if(bytes < E32_MAX_PACKET_LENGTH)
+  if(bytes < AS32_MAX_PACKET_LENGTH)
   {
     if(opts->verbose)
       debug_output("getting out of loop\n");
@@ -933,7 +971,7 @@ e32_poll_file(struct E32 *dev, struct options *opts, int fd_file, int *loop_cont
 }
 
 static int
-e32_poll_socket_unix_data(struct E32 *dev, struct options *opts, int fd_sockd, int *loop_continue)
+as32_poll_socket_unix_data(struct AS32 *dev, struct options *opts, int fd_sockd, int *loop_continue)
 {
   ssize_t bytes;
   uint8_t client_err; // return to socket clients
@@ -943,21 +981,21 @@ e32_poll_socket_unix_data(struct E32 *dev, struct options *opts, int fd_sockd, i
   client_err = 0;
   addrlen = sizeof(struct sockaddr_un);
 
-  bytes = recvfrom(fd_sockd, txbuf, E32_MAX_PACKET_LENGTH+1, 0, (struct sockaddr*) &client, &addrlen);
+  bytes = recvfrom(fd_sockd, txbuf, AS32_MAX_PACKET_LENGTH+1, 0, (struct sockaddr*) &client, &addrlen);
   if(bytes == -1)
   {
     errno_output("error receiving from unix domain socket");
     return 1;
   }
-  else if(bytes > E32_MAX_PACKET_LENGTH)
+  else if(bytes > AS32_MAX_PACKET_LENGTH)
   {
-    err_output("overflow: %d > %d", bytes, E32_MAX_PACKET_LENGTH);
+    err_output("overflow: %d > %d", bytes, AS32_MAX_PACKET_LENGTH);
     client_err++;
   }
 
   if(opts->verbose)
   {
-    debug_output("e32_poll_socket_unix_data: received %d bytes from unix domain socket: %s\n", bytes, client.sun_path);
+    debug_output("as32_poll_socket_unix_data: received %d bytes from unix domain socket: %s\n", bytes, client.sun_path);
   }
 
   // sending 0 bytes will register and we'll add to the client list
@@ -969,7 +1007,7 @@ e32_poll_socket_unix_data(struct E32 *dev, struct options *opts, int fd_sockd, i
     list_add_first(dev->socket_list, new_client);
 
     if(opts->verbose)
-      debug_output("e32_poll_socket_unix_data: registered client %d at %s\n", list_size(dev->socket_list), client.sun_path);
+      debug_output("as32_poll_socket_unix_data: registered client %d at %s\n", list_size(dev->socket_list), client.sun_path);
   }
 
   // send back an acknowledge of 1 byte to the client
@@ -978,21 +1016,21 @@ e32_poll_socket_unix_data(struct E32 *dev, struct options *opts, int fd_sockd, i
     bytes = sendto(fd_sockd, &client_err, 1, 0, (struct sockaddr*) &client, addrlen);
     if(bytes == -1)
     {
-      errno_output("e32_poll_socket_unix_data: unable to send back status to unix socket");
+      errno_output("as32_poll_socket_unix_data: unable to send back status to unix socket");
       return 1;
     }
     return 0;
   }
 
-  if(!client_err && e32_transmit(dev, txbuf, bytes))
+  if(!client_err && as32_transmit(dev, txbuf, bytes))
   {
-    err_output("e32_poll_socket_unix_data: error in transmit\n");
+    err_output("as32_poll_socket_unix_data: error in transmit\n");
     client_err++;
   }
 
   if(opts->output_standard)
   {
-    info_output("e32_poll_socket_unix_data: transmitted:\n");
+    info_output("as32_poll_socket_unix_data: transmitted:\n");
     txbuf[bytes] = '\0';
     info_output("%s", txbuf);
     fflush(stdout);
@@ -1002,14 +1040,14 @@ e32_poll_socket_unix_data(struct E32 *dev, struct options *opts, int fd_sockd, i
   bytes = sendto(fd_sockd, &client_err, 1, 0, (struct sockaddr*) &client, addrlen);
   if(bytes == -1)
   {
-    errno_output("e32_poll_socket_unix_data: unable to send back status to unix socket %s\n", client.sun_path);
+    errno_output("as32_poll_socket_unix_data: unable to send back status to unix socket %s\n", client.sun_path);
   }
 
   return client_err;
 }
 
 static int
-e32_poll_socket_unix_control(struct E32 *dev, struct options *opts, int fd_sockc)
+as32_poll_socket_unix_control(struct AS32 *dev, struct options *opts, int fd_sockc)
 {
   ssize_t bytes, ret_bytes;
   uint8_t client_err; // return to socket clients
@@ -1028,35 +1066,35 @@ e32_poll_socket_unix_control(struct E32 *dev, struct options *opts, int fd_sockc
   bytes = recvfrom(fd_sockc, control, 32, 0, (struct sockaddr*) &client, &addrlen);
   if(bytes == -1)
   {
-    errno_output("e32_poll_socket_unix_control: error receiving from unix domain socket");
+    errno_output("as32_poll_socket_unix_control: error receiving from unix domain socket");
     client_err = 1;
   }
 
-  debug_output("e32_poll_socket_unix_control: received %d bytes from unix domain socket: %s\n", bytes, client.sun_path);
+  debug_output("as32_poll_socket_unix_control: received %d bytes from unix domain socket: %s\n", bytes, client.sun_path);
 
-  if(e32_set_mode(dev, SLEEP))
+  if(as32_set_mode(dev, SLEEP))
   {
-    err_output("e32_poll_socket_unix_control: unable to go to sleep mode\n");
+    err_output("as32_poll_socket_unix_control: unable to go to sleep mode\n");
     client_err = 2;
   }
 
   if(bytes == 1 && control[0] == 's')
   {
-    if(e32_cmd_read_settings(dev))
+    if(as32_cmd_read_settings(dev))
       client_err = 3;
     memcpy(control, dev->settings, sizeof(dev->settings));
     ret_bytes = sizeof(dev->settings);
   }
   else if(bytes == 1 && control[0] == 'v')
   {
-    if(e32_cmd_read_version(dev))
+    if(as32_cmd_read_version(dev))
       client_err = 4;
     memcpy(control, dev->version, sizeof(dev->version));
     ret_bytes = sizeof(dev->version);
   }
   else if(bytes == 6 && (control[0] == 0xC0 || control[0] == 0xC3))
   {
-    if(e32_cmd_write_settings(dev, control))
+    if(as32_cmd_write_settings(dev, control))
       client_err = 5;
     ret_bytes = bytes;
   }
@@ -1088,22 +1126,22 @@ e32_poll_socket_unix_control(struct E32 *dev, struct options *opts, int fd_sockc
     }
   }
 
-  if(e32_set_mode(dev, NORMAL))
+  if(as32_set_mode(dev, NORMAL))
   {
-    err_output("e32_poll_socket_unix_control: unable to go to normal mode\n");
+    err_output("as32_poll_socket_unix_control: unable to go to normal mode\n");
     client_err = 8;
   }
 
   if(client_err)
   {
-    err_output("e32_poll_socket_unix_control: client error %d\n", client_err);
+    err_output("as32_poll_socket_unix_control: client error %d\n", client_err);
     ret_bytes = 1;
     control[0] = client_err;
   }
 
   bytes = sendto(fd_sockc, control, ret_bytes, 0, (struct sockaddr*) &client, addrlen);
   if(bytes == -1)
-    errno_output("e32_poll_socket_unix_control: unable to send back status to unix socket");
+    errno_output("as32_poll_socket_unix_control: unable to send back status to unix socket");
   else if(opts->verbose && opts->output_standard)
   {
     debug_output("writing back %d bytes to unix domain socket: %s\n", ret_bytes, client.sun_path);
@@ -1129,7 +1167,7 @@ e32_poll_socket_unix_control(struct E32 *dev, struct options *opts, int fd_sockc
 }
 
 static int
-e32_poll_gpio_aux(struct E32 *dev, struct options *opts, struct pollfd pfd[], ssize_t *rx_buf_size)
+as32_poll_gpio_aux(struct AS32 *dev, struct options *opts, struct pollfd pfd[], ssize_t *rx_buf_size)
 {
   /* AUX pin transitioned from high->low or low->high */
   ssize_t bytes;
@@ -1141,54 +1179,54 @@ e32_poll_gpio_aux(struct E32 *dev, struct options *opts, struct pollfd pfd[], ss
   if(aux == 0 && dev->state == IDLE)
   {
     if(dev->verbose)
-      debug_output("e32_poll_gpio_aux: transition from IDLE to RX state\n");
+      debug_output("as32_poll_gpio_aux: transition from IDLE to RX state\n");
 
     dev->state = RX;
     *rx_buf_size = 0;
-    e32_poll_input_disable(opts, pfd);
+    as32_poll_input_disable(opts, pfd);
   }
   else if(aux == 1 && dev->state == RX)
   {
     if(dev->verbose)
-      debug_output("e32_poll_gpio_aux: transition from RX to IDLE state\n");
+      debug_output("as32_poll_gpio_aux: transition from RX to IDLE state\n");
 
     if(opts->aux_transition_additional_delay)
     {
       if(dev->verbose)
-        debug_output("e32_poll_gpio_aux: additional sleep for uart buffered data\n");
+        debug_output("as32_poll_gpio_aux: additional sleep for uart buffered data\n");
       usleep(54000);
     }
 
     bytes = read(pfd[PFD_UART].fd, rxbuf+(*rx_buf_size), RX_BUF_BYTES);
     if(bytes == -1)
     {
-      errno_output("e32_poll_gpio_aux: error reading from uart\n");
+      errno_output("as32_poll_gpio_aux: error reading from uart\n");
       return -1;
     }
 
     *rx_buf_size += bytes;
 
     if(dev->verbose)
-      debug_output("e32_poll_gpio_aux: received %d bytes for a total of %d bytes from uart\n", bytes, *rx_buf_size);
+      debug_output("as32_poll_gpio_aux: received %d bytes for a total of %d bytes from uart\n", bytes, *rx_buf_size);
 
-    if(e32_write_output(dev, opts, rxbuf, *rx_buf_size))
-      err_output("e32_poll_gpio_aux: error writing outputs after RX to IDLE transition\n");
+    if(as32_write_output(dev, opts, rxbuf, *rx_buf_size))
+      err_output("as32_poll_gpio_aux: error writing outputs after RX to IDLE transition\n");
 
     dev->state = IDLE;
-    e32_poll_input_enable(opts, pfd);
+    as32_poll_input_enable(opts, pfd);
   }
   else if(aux == 0 && dev->state == TX)
   {
     if(dev->verbose)
-      debug_output("e32_poll_gpio_aux: transition from IDLE to TX state\n");
-    e32_poll_input_disable(opts, pfd);
+      debug_output("as32_poll_gpio_aux: transition from IDLE to TX state\n");
+    as32_poll_input_disable(opts, pfd);
   }
   else if(aux == 1 && dev->state == TX)
   {
     if(dev->verbose)
-      debug_output("e32_poll_gpio_aux: transition from TX to IDLE state\n");
+      debug_output("as32_poll_gpio_aux: transition from TX to IDLE state\n");
     dev->state = IDLE;
-    e32_poll_input_enable(opts, pfd);
+    as32_poll_input_enable(opts, pfd);
   }
 
   return 0;
@@ -1221,7 +1259,7 @@ State Machine
 
 */
 size_t
-e32_poll(struct E32 *dev, struct options *opts)
+as32_poll(struct AS32 *dev, struct options *opts)
 {
   ssize_t rx_buf_size;
   int ret, loop;
@@ -1230,12 +1268,12 @@ e32_poll(struct E32 *dev, struct options *opts)
   /* used in our poll loop */
   struct pollfd pfd[6];
 
-  e32_poll_init(dev, opts, pfd);
+  as32_poll_init(dev, opts, pfd);
 
   errors = 0;
   loop = 1;
   rx_buf_size = 0;
-  enum E32_state prev_state;
+  enum AS32_state prev_state;
 
   while(loop)
   {
@@ -1255,32 +1293,32 @@ e32_poll(struct E32 *dev, struct options *opts)
 
     if(pfd[PFD_GPIO_AUX].revents & POLLPRI)
     {
-      errors += e32_poll_gpio_aux(dev, opts, pfd, &rx_buf_size);
+      errors += as32_poll_gpio_aux(dev, opts, pfd, &rx_buf_size);
     }
 
     if(pfd[PFD_UART].revents & POLLIN)
     {
-      errors+= e32_poll_uart(dev, opts, pfd[PFD_UART].fd, &rx_buf_size);
+      errors+= as32_poll_uart(dev, opts, pfd[PFD_UART].fd, &rx_buf_size);
     }
 
     if(pfd[PFD_STDIN].revents & POLLIN)
     {
-      errors += e32_poll_stdin(dev, pfd[PFD_STDIN].fd, &loop);
+      errors += as32_poll_stdin(dev, pfd[PFD_STDIN].fd, &loop);
     }
 
     if(pfd[PFD_INPUT_FILE].revents & POLLIN)
     {
-      errors += e32_poll_file(dev, opts, pfd[PFD_INPUT_FILE].fd, &loop);
+      errors += as32_poll_file(dev, opts, pfd[PFD_INPUT_FILE].fd, &loop);
     }
 
     if(pfd[PFD_SOCKET_UNIX_DATA].revents & POLLIN)
     {
-      errors += e32_poll_socket_unix_data(dev, opts, pfd[PFD_SOCKET_UNIX_DATA].fd, &loop);
+      errors += as32_poll_socket_unix_data(dev, opts, pfd[PFD_SOCKET_UNIX_DATA].fd, &loop);
     }
 
     if( pfd[PFD_SOCKET_UNIX_CONTROL].revents & POLLIN)
     {
-      errors += e32_poll_socket_unix_control(dev, opts, pfd[PFD_SOCKET_UNIX_CONTROL].fd);
+      errors += as32_poll_socket_unix_control(dev, opts, pfd[PFD_SOCKET_UNIX_CONTROL].fd);
     }
 
     /*
@@ -1294,7 +1332,7 @@ e32_poll(struct E32 *dev, struct options *opts)
     */
     if(prev_state == IDLE && dev->state == TX)
     {
-      e32_poll_input_disable(opts, pfd);
+      as32_poll_input_disable(opts, pfd);
     }
   }
 

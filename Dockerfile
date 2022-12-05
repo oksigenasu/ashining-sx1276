@@ -7,15 +7,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         wget 
 
-RUN wget http://lloydrochester.com/code/e32-${VERSION}.tar.gz && \
-    tar zxf e32-${VERSION}.tar.gz && \
-    cd e32-${VERSION} && \
+RUN wget http://lloydrochester.com/code/as32-${VERSION}.tar.gz && \
+    tar zxf as32-${VERSION}.tar.gz && \
+    cd as32-${VERSION} && \
     ./configure && \
     make && \
     make install
 
 FROM ubuntu:20.04
 
-COPY --from=build /usr/local/bin/e32 /usr/local/bin/e32
+COPY --from=build /usr/local/bin/as32 /usr/local/bin/as32
 
-ENTRYPOINT [ "/usr/local/bin/e32" ]
+ENTRYPOINT [ "/usr/local/bin/as32" ]

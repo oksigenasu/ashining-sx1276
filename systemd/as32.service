@@ -1,0 +1,16 @@
+[Unit]
+Description=ashining as32 systemd service
+
+[Service]
+Type=forking
+PIDFile=/run/as32.pid
+ExecStartPre=stat /dev/serial0
+ExecStartPre=/usr/local/bin/as32 --reset
+ExecStart=/usr/local/bin/as32 -v --daemon --sock-unix-data /run/as32.data --sock-unix-ctrl /run/as32.control
+ExecStartPost=chown --reference=/dev/serial0 /run/as32.data /run/as32.control
+ExecStartPost=chmod --reference=/dev/serial0 /run/as32.data /run/as32.control
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

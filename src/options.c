@@ -10,7 +10,7 @@ usage(char *progname)
   options_init(&opts);
   printf("Usage: %s [OPTIONS]\n", progname);
   printf("Version %s\n\n", VERSION);
-  printf("A command line tool to transmit and receive data from the EByte e32 LORA Module. If this tool is run without options the e32 will transmit what is sent from the keyboard - stdin and will output what is received to stdout. Hit return to send the message. To test a connection between two e32 boards run a %s -s on both to ensure status information is correct and matching. Once the status is deemed compatible on both e32 modules then run %s without options on both. On the first type something and hit enter, which will transmit from one e32 to the other and you should see this message show up on second e32.\n\n", progname, progname);
+  printf("A command line tool to transmit and receive data from the EByte as32 LORA Module. If this tool is run without options the as32 will transmit what is sent from the keyboard - stdin and will output what is received to stdout. Hit return to send the message. To test a connection between two as32 boards run a %s -s on both to ensure status information is correct and matching. Once the status is deemed compatible on both as32 modules then run %s without options on both. On the first type something and hit enter, which will transmit from one as32 to the other and you should see this message show up on second as32.\n\n", progname, progname);
   printf("OPTIONS:\n\
 -h --help                Print help\n\
 -r --reset               SW Reset\n\
@@ -18,7 +18,7 @@ usage(char *progname)
 -v --verbose             Verbose Output\n\
 -s --status              Get status model, frequency, address, channel, data rate, baud, parity and transmit power.\n\
 -w --write-settings HEX  Write settings from HEX. see datasheet for these 6 bytes. Example: -w C000001A1744.\n\
-                         For the form XXYYYY1AZZ44. If XX=C0 parameters are saved to e32's EEPROM, if XX=C2 settings\n\
+                         For the form XXYYYY1AZZ44. If XX=C0 parameters are saved to as32's EEPROM, if XX=C2 settings\n\
                          will be lost on power cycle. The address is represented by YYYY and the channel is represented\n\
                          by ZZ.\n\
 -y --tty                 The UART to use. Defaults to /dev/serial0 the soft link\n\
@@ -31,6 +31,8 @@ usage(char *progname)
 -x --sock-unix-data FILE Send and receive data from a Unix Domain Socket\n\
 -c --sock-unix-ctrl FILE Change and Read settings from a Unix Domain Socket\n\
 -d --daemon              Run as a Daemon\n\
+-e --encryption HEX      Configure data encryption module using 16 byte HEX. Only modules with same data encyption \n\
+                         can communicate with each other. Example -e 0102030405060708090A0B0C0D0E0F10
 ", opts.gpio_m0, opts.gpio_m1, opts.gpio_aux);
 }
 
@@ -71,6 +73,8 @@ options_init(struct options *opts)
   opts->fd_socket_unix_control = -1;
   opts->aux_transition_additional_delay = 0;
   memset(opts->settings_write_input, 0, sizeof(opts->settings_write_input));
+  memset(opts->setting_write_encryption, 0, sizeof(opts->setting_write_encryption));
+
   snprintf(opts->tty_name, 64, "/dev/serial0");
 }
 
@@ -95,6 +99,13 @@ options_print(struct options* opts)
     printf("option write settings is: ");
     for(int i=0;i<6;i++)
       printf("%x", opts->settings_write_input[i]);
+    puts("");
+  }
+  if(opts->setting_write_encryption[0])
+  {
+    printf("option write encryption is: ");
+    for(int i=0;i<16;i++)
+      printf("%x", opts->setting_write_encryption[i]);
     puts("");
   }
 }
@@ -223,6 +234,42 @@ bad_settings:
   return err;
 }
 
+options_parse_encryption(struct options *opts, char *encryption)
+{
+  int num_parsed, err;
+  char hexbyte[3];
+  uint8_t *ptr;
+
+  printf("parsing %s\n", encryption);
+
+  if(strnlen(encryption, 33) != 32)
+  {
+    fprintf(stderr, "options not of length 32");
+    err = 1;
+    goto bad_encryption;
+  }
+
+  ptr = opts->setting_write_encryption;
+  hexbyte[2] = '\0';
+  for(int i=0; i<32; i=i+2)
+  {
+    hexbyte[0] = encryption[i];
+    hexbyte[1] = encryption[i+1];
+    num_parsed = sscanf(hexbyte, "%hhx", ptr++);
+    if(num_parsed != 1)
+    {
+      err_output("error parsing %s\n", hexbyte);
+      err = 3;
+      goto bad_encryption;
+    }
+  }
+  return 0;
+
+bad_encryption:
+  fprintf(stderr, "error parsing settings %s, expect form XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n", encryption);
+  return err;
+}
+
 int
 options_parse(struct options *opts, int argc, char *argv[])
 {
@@ -255,6 +302,7 @@ options_parse(struct options *opts, int argc, char *argv[])
     {"sock-unix-ctrl",     required_argument, 0, 'c'},
     {"binary",                   no_argument, 0, 'b'},
     {"daemon",                   no_argument, 0, 'd'},
+    {"encryption",         required_argument, 0, 'e'},
     {0,                                    0, 0,   0}
   };
 
@@ -325,6 +373,9 @@ options_parse(struct options *opts, int argc, char *argv[])
     case 'w':
       err |= options_parse_settings(opts, optarg);
       break;
+    case 'e':
+      err |= options_parse_encryption(opts, optarg);
+      break;
     }
   }
 
@@ -335,7 +386,7 @@ options_parse(struct options *opts, int argc, char *argv[])
     use_syslog = 1;
     opts->input_standard = 0;
     opts->output_standard = 0;
-    openlog("e32", 0, LOG_DAEMON);
+    openlog("as32", 0, LOG_DAEMON);
   }
 
   if(strnlen(infile, BUF))
